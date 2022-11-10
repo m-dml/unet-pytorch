@@ -39,3 +39,34 @@ def get_conv_layer(
         return _get_periodic_conv()
     else:
         raise NotImplementedError
+
+
+def get_pooling_layer(
+    kernel_size: int = 2,
+    stride: int = 2,
+    padding: int = 0,
+    pool_type: str = "max",
+    n_dims: int = 1,
+):
+    def _get_max_pooling_layer():
+        if n_dims == 1:
+            return nn.MaxPool1d(kernel_size, stride, padding)
+        elif n_dims == 2:
+            return nn.MaxPool2d(kernel_size, stride, padding)
+        else:
+            raise NotImplementedError
+
+    def _get_average_pooling_layer():
+        if n_dims == 1:
+            return nn.AvgPool1d(kernel_size, stride, padding)
+        elif n_dims == 2:
+            return nn.AvgPool2d(kernel_size, stride, padding)
+        else:
+            raise NotImplementedError
+
+    if pool_type == "max":
+        return _get_max_pooling_layer()
+    elif pool_type == "average":
+        return _get_average_pooling_layer()
+    else:
+        raise NotImplementedError
