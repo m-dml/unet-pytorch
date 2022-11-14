@@ -1,5 +1,6 @@
 import torch.nn as nn
 
+from unet.layers.global_pooling import GlobalAvgPool, GlobalMaxPool
 from unet.layers.periodic import PeriodicConv1D, PeriodicConv2D
 
 
@@ -84,5 +85,17 @@ def get_upconv_layer(
         return nn.ConvTranspose1d(in_channels, out_channels, kernel_size, stride, padding)
     elif n_dims == 2:
         return nn.ConvTranspose2d(in_channels, out_channels, kernel_size, stride, padding)
+    else:
+        raise NotImplementedError
+
+
+def get_global_pooling_layer(
+    dim: int = -1,
+    type: str = "max",
+):
+    if type == "max":
+        return GlobalMaxPool(dim)
+    elif type == "avg":
+        return GlobalAvgPool(dim)
     else:
         raise NotImplementedError
