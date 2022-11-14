@@ -70,3 +70,19 @@ def get_pooling_layer(
         return _get_average_pooling_layer()
     else:
         raise NotImplementedError
+
+
+def get_upconv_layer(
+    in_channels: int,
+    out_channels: int,
+    kernel_size: int = 2,
+    stride: int = 2,
+    padding: int = 0,
+    n_dims: int = 1,
+):
+    if n_dims == 1:
+        return nn.ConvTranspose1d(in_channels, out_channels, kernel_size, stride, padding)
+    elif n_dims == 2:
+        return nn.ConvTranspose2d(in_channels, out_channels, kernel_size, stride, padding)
+    else:
+        raise NotImplementedError
