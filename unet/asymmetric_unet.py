@@ -21,13 +21,16 @@ class AsymmetricUnet(nn.Module):
         self.n_levels = n_levels
         self.encoder_dim = encoder_dim
         self.decoder_dim = decoder_dim
+        self.conv_type = conv_type
         self.encoder = self.instantiate_encoder()
         self.decoder = self.instantiate_decoder()
         self.output = OutputConv(
             in_channels=self.encoder[0].out_channels,
             out_channels=out_channels,
             n_dims=decoder_dim,
-            conv_type=conv_type,
+            conv_kwargs={
+                "conv_type": self.conv_type,
+            },
         )
         self.gp = get_global_pooling_layer(type=global_pooling_type)
 
@@ -43,6 +46,9 @@ class AsymmetricUnet(nn.Module):
                 out_channels=filters[0],
                 use_pooling=True,
                 n_dims=self.encoder_dim,
+                conv_block_kwargs={
+                    "conv_type": self.conv_type,
+                },
             )
         )
         for i in range(1, self.n_levels):
@@ -55,6 +61,9 @@ class AsymmetricUnet(nn.Module):
                     out_channels=filters[i],
                     use_pooling=use_pooling,
                     n_dims=self.encoder_dim,
+                    conv_block_kwargs={
+                        "conv_type": self.conv_type,
+                    },
                 )
             )
         return encoder
@@ -74,6 +83,9 @@ class AsymmetricUnet(nn.Module):
                     out_channels=out_channels,
                     use_upconv=use_upconv,
                     n_dims=self.decoder_dim,
+                    conv_block_kwargs={
+                        "conv_type": self.conv_type,
+                    },
                 )
             )
         return decoder

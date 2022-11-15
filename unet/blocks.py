@@ -37,7 +37,20 @@ class ConvBlock(nn.Module):
         return self.model.forward(x)
 
 
-class EncoderBlock(nn.Module):
+class AbstractBlock(nn.Module):
+    @staticmethod
+    def override_kwargs(
+        default_kwargs: dict,
+        override_kwargs: dict,
+    ) -> dict:
+        if override_kwargs is None:
+            override_kwargs = {}
+        for key, value in override_kwargs.items():
+            default_kwargs[key] = value
+        return default_kwargs
+
+
+class EncoderBlock(AbstractBlock):
     def __init__(
         self,
         in_channels: int,
@@ -51,30 +64,38 @@ class EncoderBlock(nn.Module):
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.use_pooling = use_pooling
-        if conv_block_kwargs is None:
-            conv_block_kwargs = {
-                "in_channels": in_channels,
-                "filters": [out_channels, out_channels],
-                "kernel_size": 3,
-                "stride": 1,
-                "padding": 1,
-                "conv_type": "periodic",
-                "activation": nn.ReLU,
-                "n_dims": n_dims,
-            }
-        if pooling_kwargs is None:
-            pooling_kwargs = {
-                "kernel_size": 2,
-                "stride": 2,
-                "padding": 0,
-                "pool_type": "max",
-                "n_dims": n_dims,
-            }
+        self.n_dims = n_dims
+
+        conv_block_kwargs = self.__override_conv_block_kwargs(conv_block_kwargs)
         self.conv_block = ConvBlock(**conv_block_kwargs)
         if use_pooling:
+            pooling_kwargs = self.__override_pooling_kwargs(pooling_kwargs)
             self.pool = get_pooling_layer(**pooling_kwargs)
         # value of x before pooling
         self._x = None
+
+    def __override_conv_block_kwargs(self, conv_block_kwargs) -> dict:
+        default_kwargs = {
+            "in_channels": self.in_channels,
+            "filters": [self.out_channels, self.out_channels],
+            "kernel_size": 3,
+            "stride": 1,
+            "padding": 1,
+            "conv_type": "periodic",
+            "activation": nn.ReLU,
+            "n_dims": self.n_dims,
+        }
+        return self.override_kwargs(default_kwargs, conv_block_kwargs)
+
+    def __override_pooling_kwargs(self, pooling_kwargs) -> dict:
+        default_kwargs = {
+            "kernel_size": 2,
+            "stride": 2,
+            "padding": 0,
+            "pool_type": "max",
+            "n_dims": self.n_dims,
+        }
+        return self.override_kwargs(default_kwargs, pooling_kwargs)
 
     def forward(self, x):
         x = self.conv_block.forward(x)
@@ -88,7 +109,7 @@ class EncoderBlock(nn.Module):
         return self._x
 
 
-class DecoderBlock(nn.Module):
+class DecoderBlock(AbstractBlock):
     def __init__(
         self,
         in_channels: int,
@@ -102,29 +123,39 @@ class DecoderBlock(nn.Module):
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.use_upconv = use_upconv
-        if conv_block_kwargs is None:
-            conv_block_kwargs = {
-                "in_channels": in_channels * 2 if use_upconv else in_channels,
-                "filters": [out_channels * 2, out_channels] if use_upconv else [in_channels, out_channels],
-                "kernel_size": 3,
-                "stride": 1,
-                "padding": 3,
-                "conv_type": "periodic",
-                "activation": nn.ReLU,
-                "n_dims": n_dims,
-            }
-        if upconv_kwargs is None:
-            upconv_kwargs = {
-                "in_channels": in_channels,
-                "out_channels": in_channels,
-                "kernel_size": 2,
-                "stride": 2,
-                "padding": 0,
-                "n_dims": n_dims,
-            }
+        self.n_dims = n_dims
+
+        conv_block_kwargs = self.__override_conv_block_kwargs(conv_block_kwargs)
         self.conv_block = ConvBlock(**conv_block_kwargs)
         if use_upconv:
+            upconv_kwargs = self.__override_upconv_kwargs(upconv_kwargs)
             self.upconv = get_upconv_layer(**upconv_kwargs)
+
+    def __override_conv_block_kwargs(self, conv_block_kwargs) -> dict:
+        default_kwargs = {
+            "in_channels": self.in_channels * 2 if self.use_upconv else self.in_channels,
+            "filters": [self.out_channels * 2, self.out_channels]
+            if self.use_upconv
+            else [self.in_channels, self.out_channels],
+            "kernel_size": 3,
+            "stride": 1,
+            "padding": 3,
+            "conv_type": "periodic",
+            "activation": nn.ReLU,
+            "n_dims": self.n_dims,
+        }
+        return self.override_kwargs(default_kwargs, conv_block_kwargs)
+
+    def __override_upconv_kwargs(self, upconv_kwargs) -> dict:
+        default_kwargs = {
+            "in_channels": self.in_channels,
+            "out_channels": self.in_channels,
+            "kernel_size": 2,
+            "stride": 2,
+            "padding": 0,
+            "n_dims": self.n_dims,
+        }
+        return self.override_kwargs(default_kwargs, upconv_kwargs)
 
     def forward(self, x, x_skip=None):
         if self.use_upconv:
@@ -134,28 +165,34 @@ class DecoderBlock(nn.Module):
         return x
 
 
-class OutputConv(nn.Module):
+class OutputConv(AbstractBlock):
     def __init__(
         self,
         in_channels: int,
         out_channels: int,
         n_dims: int,
-        conv_type: str = "default",
-        conv_block_kwargs: dict = None,
+        conv_kwargs: dict = None,
     ):
         super(OutputConv, self).__init__()
-        if conv_block_kwargs is None:
-            conv_block_kwargs = {
-                "in_channels": in_channels,
-                "out_channels": out_channels,
-                "kernel_size": 3,
-                "stride": 1,
-                "padding": 1,
-                "padding_mode": "zeros",
-                "n_dims": n_dims,
-                "conv_type": conv_type,
-            }
-        self.conv = get_conv_layer(**conv_block_kwargs)
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.n_dims = n_dims
+
+        conv_kwargs = self.__override_conv_kwargs(conv_kwargs)
+        self.conv = get_conv_layer(**conv_kwargs)
+
+    def __override_conv_kwargs(self, conv_kwargs) -> dict:
+        default_kwargs = {
+            "in_channels": self.in_channels,
+            "out_channels": self.out_channels,
+            "kernel_size": 3,
+            "stride": 1,
+            "padding": 3,
+            "padding_mode": "circular",
+            "n_dims": self.n_dims,
+            "conv_type": "periodic",
+        }
+        return self.override_kwargs(default_kwargs, conv_kwargs)
 
     def forward(self, x):
         return self.conv.forward(x)
