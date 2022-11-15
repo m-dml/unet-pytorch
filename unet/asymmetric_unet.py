@@ -13,7 +13,6 @@ class AsymmetricUnet(nn.Module):
         encoder_dim: int = 2,
         decoder_dim: int = 1,
         conv_type: str = "default",
-        decoder_conv_kwargs: dict = None,
         global_pooling_type: str = "max",
     ):
         super(AsymmetricUnet, self).__init__()
