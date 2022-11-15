@@ -1,6 +1,6 @@
 import torch.nn as nn
 
-from unet.blocks import DecoderBlock, EncoderBlock, OutputConv
+from unet.blocks import DecoderBlock, EncoderBlock, OutputBlock
 from unet.layers import get_global_pooling_layer
 
 
@@ -13,6 +13,7 @@ class AsymmetricUnet(nn.Module):
         encoder_dim: int = 2,
         decoder_dim: int = 1,
         conv_type: str = "default",
+        decoder_conv_kwargs: dict = None,
         global_pooling_type: str = "max",
     ):
         super(AsymmetricUnet, self).__init__()
@@ -24,7 +25,7 @@ class AsymmetricUnet(nn.Module):
         self.conv_type = conv_type
         self.encoder = self.instantiate_encoder()
         self.decoder = self.instantiate_decoder()
-        self.output = OutputConv(
+        self.output = OutputBlock(
             in_channels=self.encoder[0].out_channels,
             out_channels=out_channels,
             n_dims=decoder_dim,
