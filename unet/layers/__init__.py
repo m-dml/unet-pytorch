@@ -19,8 +19,10 @@ def get_conv_layer(
             return nn.Conv1d(in_channels, out_channels, kernel_size, stride, padding, padding_mode=padding_mode)
         elif n_dims == 2:
             return nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding, padding_mode=padding_mode)
+        elif n_dims == 3:
+            return nn.Conv3d(in_channels, out_channels, kernel_size, stride, padding, padding_mode=padding_mode)
         else:
-            raise NotImplementedError
+            raise NotImplementedError("'n_dims' cannot be grater than 3")
 
     def _get_periodic_conv():
         if n_dims == 1:
@@ -32,14 +34,14 @@ def get_conv_layer(
                 in_channels, out_channels, kernel_size, stride=stride, padding_mode="circular", padding=padding
             )
         else:
-            raise NotImplementedError
+            raise NotImplementedError(f"'n_dims' cannot be grater than 2 for conv_type={conv_type}")
 
     if conv_type == "default":
         return _get_default_conv()
     elif conv_type == "periodic":
         return _get_periodic_conv()
     else:
-        raise NotImplementedError
+        raise NotImplementedError(f"{conv_type} is not supported. Use 'default' or 'periodic' instead")
 
 
 def get_pooling_layer(
@@ -55,7 +57,7 @@ def get_pooling_layer(
         elif n_dims == 2:
             return nn.MaxPool2d(kernel_size, stride, padding)
         else:
-            raise NotImplementedError
+            raise NotImplementedError("'n_dims' cannot be grater than 3")
 
     def _get_average_pooling_layer():
         if n_dims == 1:
@@ -63,11 +65,11 @@ def get_pooling_layer(
         elif n_dims == 2:
             return nn.AvgPool2d(kernel_size, stride, padding)
         else:
-            raise NotImplementedError
+            raise NotImplementedError("'n_dims' cannot be grater than 3")
 
     if pool_type == "max":
         return _get_max_pooling_layer()
-    elif pool_type == "average":
+    elif pool_type == "avg":
         return _get_average_pooling_layer()
     else:
         raise NotImplementedError
@@ -85,8 +87,10 @@ def get_upconv_layer(
         return nn.ConvTranspose1d(in_channels, out_channels, kernel_size, stride, padding)
     elif n_dims == 2:
         return nn.ConvTranspose2d(in_channels, out_channels, kernel_size, stride, padding)
+    elif n_dims == 3:
+        return nn.ConvTranspose3d(in_channels, out_channels, kernel_size, stride, padding)
     else:
-        raise NotImplementedError
+        raise NotImplementedError("'n_dims' cannot be grater than 3")
 
 
 def get_global_pooling_layer(
@@ -98,4 +102,4 @@ def get_global_pooling_layer(
     elif type == "avg":
         return GlobalAvgPool(dim)
     else:
-        raise NotImplementedError
+        raise NotImplementedError(f"'{type}' is not supported. Use 'max' or 'avg' instead")

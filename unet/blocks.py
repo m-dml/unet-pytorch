@@ -43,9 +43,12 @@ class AbstractBlock(nn.Module):
         default_kwargs: dict,
         override_kwargs: dict,
     ) -> dict:
+        default_keys = default_kwargs.keys()
         if override_kwargs is None:
             override_kwargs = {}
         for key, value in override_kwargs.items():
+            if key not in default_keys:
+                raise KeyError(f"{key} not allowed for dict with {default_keys}.")
             default_kwargs[key] = value
         return default_kwargs
 
