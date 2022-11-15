@@ -18,21 +18,21 @@ class ModularUnet(nn.Module):
         encoder_size = len(encoder_blocks)
         decoder_size = len(decoder_blocks)
         if encoder_size != decoder_size:
-            raise ValueError("encoder_blocks abd decoder_blocks length mismatch")
+            raise ValueError("encoder_blocks abd decoder_blocks length mismatch ")
         self.n_levels = encoder_size
 
         for block in encoder_blocks:
             if not isinstance(block, AbstractEncoderBlock):
-                raise TypeError("encoder_blocks must contain AbstractEncoderBlock")
+                raise TypeError("blocks in 'encoder_blocks' must be AbstractEncoderBlock or inherited from it")
         self.encoder_blocks = encoder_blocks
 
         for block in decoder_blocks:
             if not isinstance(block, AbstractDecoderBlock):
-                raise TypeError("decoder_blocks must contain AbstractDecoderBlock")
+                raise TypeError("blocks in 'decoder_blocks' must contain AbstractDecoderBlock or inherited from it")
         self.decoder_blocks = decoder_blocks
 
         if not isinstance(output_block, AbstractOutputBlock):
-            raise TypeError("output_block must be an AbstractOutputBlock")
+            raise TypeError("output_block must be an AbstractOutputBlock or inherited from it")
         self.output_block = output_block
 
         self.skip_connection = skip_connection
