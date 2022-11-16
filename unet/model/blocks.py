@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 
-from unet.abstract_blocks import AbstractDecoderBlock, AbstractEncoderBlock, AbstractOutputBlock
 from unet.layers import get_conv_layer, get_pooling_layer, get_upconv_layer
+from unet.model.abstract_blocks import AbstractDecoderBlock, AbstractEncoderBlock, AbstractOutputBlock
 
 
 class ConvBlock(nn.Module):
@@ -42,14 +42,16 @@ class EncoderBlock(AbstractEncoderBlock):
     def __init__(
         self,
         in_channels: int,
-        out_channels: int,
+        filters: list,
         use_pooling: bool = True,
         n_dims: int = 1,
         conv_block_kwargs: dict = None,
         pooling_kwargs: dict = None,
     ):
         self.in_channels = in_channels
-        self.out_channels = out_channels
+        self.out_channels = filters[-1]
+        self.filters = filters
+
         self.use_pooling = use_pooling
         self.n_dims = n_dims
 
@@ -64,7 +66,7 @@ class EncoderBlock(AbstractEncoderBlock):
     def __override_conv_block_kwargs(self, conv_block_kwargs) -> dict:
         default_kwargs = {
             "in_channels": self.in_channels,
-            "filters": [self.out_channels, self.out_channels],
+            "filters": self.filters,
             "kernel_size": 3,
             "stride": 1,
             "padding": 1,
@@ -89,16 +91,21 @@ class DecoderBlock(AbstractDecoderBlock):
     def __init__(
         self,
         in_channels: int,
-        out_channels: int,
-        use_upconv: bool = True,
+        filters: list,
         n_dims: int = 1,
+        use_upconv: bool = True,
         conv_block_kwargs: dict = None,
         upconv_kwargs: dict = None,
     ):
         self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.use_upconv = use_upconv
+        self.out_channels = filters[-1]
+        self.filters = filters
         self.n_dims = n_dims
+        if use_upconv:
+            # self.filters[0] *= 2
+            self.in_channels *= 2
+        else:
+            self.filters[0] = self.in_channels
 
         conv_block_kwargs = self.__override_conv_block_kwargs(conv_block_kwargs)
         conv_block = ConvBlock(**conv_block_kwargs)
@@ -110,10 +117,8 @@ class DecoderBlock(AbstractDecoderBlock):
 
     def __override_conv_block_kwargs(self, conv_block_kwargs) -> dict:
         default_kwargs = {
-            "in_channels": self.in_channels * 2 if self.use_upconv else self.in_channels,
-            "filters": [self.out_channels * 2, self.out_channels]
-            if self.use_upconv
-            else [self.in_channels, self.out_channels],
+            "in_channels": self.in_channels,
+            "filters": self.filters,
             "kernel_size": 3,
             "stride": 1,
             "padding": 3,
@@ -125,8 +130,8 @@ class DecoderBlock(AbstractDecoderBlock):
 
     def __override_upconv_kwargs(self, upconv_kwargs) -> dict:
         default_kwargs = {
-            "in_channels": self.in_channels,
-            "out_channels": self.in_channels,
+            "in_channels": self.filters[0],
+            "out_channels": self.filters[0],
             "kernel_size": 2,
             "stride": 2,
             "padding": 0,
@@ -140,7 +145,7 @@ class OutputBlock(AbstractOutputBlock):
         self,
         in_channels: int,
         out_channels: int,
-        n_dims: int,
+        n_dims: int = 1,
         conv_kwargs: dict = None,
     ):
         self.in_channels = in_channels

@@ -2,7 +2,7 @@ from typing import Union
 
 import torch.nn as nn
 
-from unet.blocks import AbstractDecoderBlock, AbstractEncoderBlock, AbstractOutputBlock
+from unet.model.blocks import AbstractDecoderBlock, AbstractEncoderBlock, AbstractOutputBlock
 
 
 class ModularUnet(nn.Module):
