@@ -11,7 +11,7 @@ class ModularUnet(nn.Module):
         encoder_blocks: Union[nn.ModuleList, list, tuple],
         decoder_blocks: Union[nn.ModuleList, list, tuple],
         output_block: Union[nn.Module],
-        skip_connection: nn.Module,
+        skip_connection: nn.Module = None,
         use_bottom_skip: bool = False,
     ):
         super(ModularUnet, self).__init__()
@@ -42,12 +42,14 @@ class ModularUnet(nn.Module):
         for block in self.encoder_blocks:
             x = block.forward(x)
 
-        if self.use_bottom_skip:
+        if self.skip_connection is not None and self.use_bottom_skip:
             x = self.skip_connection(x)
         x = self.decoder_blocks[0].forward(x)
         for i in range(1, self.n_levels):
             j = self.n_levels - 1 - i
-            x_skip = self.skip_connection(self.encoder_blocks[j].x)
+            x_skip = self.encoder_blocks[j].x
+            if self.skip_connection is not None:
+                x_skip = self.skip_connection(x_skip)
             x = self.decoder_blocks[i].forward(x, x_skip)
 
         x = self.output_block.forward(x)
