@@ -17,4 +17,4 @@ class GlobalAvgPool(nn.Module):
         self.dim = dim
 
     def forward(self, x):
-        return torch.mean(x, dim=self.dim).values
+        return torch.mean(x, dim=self.dim)
