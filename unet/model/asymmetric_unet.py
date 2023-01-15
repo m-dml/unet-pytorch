@@ -20,6 +20,7 @@ class Unet(ModularUnet):
         pooling_kwargs: dict = None,
         upconv_kwargs: dict = None,
         global_pooling_type: str = None,
+        global_pooling_dim: int = -2,
     ):
         encoder_size = len(encoder_layers)
         decoder_size = len(decoder_layers)
@@ -40,7 +41,7 @@ class Unet(ModularUnet):
         )
         skip_connection = None
         if global_pooling_type is not None:
-            skip_connection = get_global_pooling_layer(type=global_pooling_type)
+            skip_connection = get_global_pooling_layer(type=global_pooling_type, dim=global_pooling_dim)
 
         super(Unet, self).__init__(
             encoder_blocks=encoder_blocks,
